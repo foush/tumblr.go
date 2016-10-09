@@ -60,7 +60,7 @@ func TestFollowingNext(t *testing.T) {
 	result, _ := GetFollowing(client, 0, 0)
 	// test getting next
 	expectedParams := url.Values{}
-	expectedParams.Set("limit", "0")
+	expectedParams.Set("limit", "3")
 	expectedParams.Set("offset", "3")
 	client.confirmExpectedSet = expectClientCallParams(
 		t,
@@ -80,6 +80,28 @@ func TestFollowingNext(t *testing.T) {
 	if _, err := nextResult.Next(); err != NoNextPageError {
 		t.Fatal("Offset exceeding total should mean no next page")
 	}
+}
+
+func TestFollowingPrevWithoutLimit(t *testing.T) {
+	client := newTestClient("{}", nil)
+	result,_ := GetFollowing(client, 4, 0)
+	result.Blogs = []Blog{Blog{}, Blog{}}
+	expectedParams := url.Values{}
+	expectedParams.Set("offset", "2")
+	expectedParams.Set("limit", "2")
+	client.confirmExpectedSet = expectClientCallParams(
+		t,
+		"Following.Next",
+		http.MethodGet,
+		"/user/following",
+		expectedParams,
+	)
+	if result, err := result.Prev(); err != nil {
+		t.Fatal("Prev should succeed while next offset is positive")
+	} else if result.limit != 2 {
+		t.Fatal("Unspecified limit should be set from size of result set")
+	}
+
 }
 
 func TestFollowingPrev(t *testing.T) {
@@ -193,6 +215,26 @@ func TestFollowerNextFailsOnEmptyResult(t *testing.T) {
 		t.Fatal("Next should succeed when offset + limit is less than total")
 	}
 }
+
+func TestFollowerNextUsesResultSizeIfNoLimit(t *testing.T) {
+	client := newTestClient("{}", nil)
+	blogName := "david"
+	result,_ := GetFollowers(client, blogName, 0, 0)
+	result.Total = 10
+	result.Followers = []Follower{Follower{}, Follower{}}
+	params := url.Values{}
+	params.Set("offset", "2")
+	params.Set("limit", "2")
+	client.confirmExpectedSet = expectClientCallParams(
+		t,
+		"Followers.Next",
+		http.MethodGet,
+		blogPath("/blog/%s/followers", blogName),
+		params,
+	)
+	result.Next()
+}
+
 func TestFollowerPrev(t *testing.T) {
 	client := newTestClient("{}", nil)
 	blogName := "david"
@@ -221,6 +263,26 @@ func TestFollowerPrev(t *testing.T) {
 		t.Fatal("Should get error when attempting previous page on first result set")
 	}
 }
+
+func TestFollowerPrevUsesResultSizeIfNoLimit(t *testing.T) {
+	client := newTestClient("{}", nil)
+	blogName := "david"
+	result,_ := GetFollowers(client, blogName, 4, 0)
+	result.Total = 10
+	result.Followers = []Follower{Follower{}, Follower{}}
+	params := url.Values{}
+	params.Set("offset", "2")
+	params.Set("limit", "2")
+	client.confirmExpectedSet = expectClientCallParams(
+		t,
+		"Followers.Prev",
+		http.MethodGet,
+		blogPath("/blog/%s/followers", blogName),
+		params,
+	)
+	result.Prev()
+}
+
 
 func TestFollow(t *testing.T) {
 	blogName := "david"

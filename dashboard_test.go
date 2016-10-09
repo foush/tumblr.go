@@ -4,6 +4,7 @@ import (
 	"testing"
 	"net/url"
 	"net/http"
+	"errors"
 )
 
 type testEndpoint struct {
@@ -18,6 +19,32 @@ func getDashString(posts...Post) string {
 			"posts": posts,
 		},
 	})
+}
+
+func TestDashboardBothOffsetAndSinceId(t *testing.T) {
+	client := newTestClient("{}", nil)
+	params := url.Values{}
+	params.Set("offset", "0")
+	params.Set("since_id", "0")
+	_, err := GetDashboard(client, params)
+	if err == nil {
+		t.Fatal("Specifying both offset and since_id should generate an error")
+	}
+}
+
+func TestDashboardReturnsClientError(t *testing.T) {
+	clientError := errors.New("Client error")
+	client := newTestClient("{}", clientError)
+	if _,err  := GetDashboard(client, url.Values{}); err != clientError {
+		t.Fatal("Client errors should be returned")
+	}
+}
+
+func TestDashboardErrorsOnBadJSON(t *testing.T) {
+	client := newTestClient("{", nil)
+	if _,err  := GetDashboard(client, url.Values{}); err == nil {
+		t.Fatal("Bad json should result in an error")
+	}
 }
 
 func TestPaginateDashboardByOffset(t *testing.T) {

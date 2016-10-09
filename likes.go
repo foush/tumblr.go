@@ -36,9 +36,9 @@ func GetLikes(client ClientInterface, params url.Values) (*Likes, error) {
 }
 
 func doLike(client ClientInterface, path string, postId uint64, reblogKey string) error {
-	_, err := client.PostWithParams(path, setPostId(postId, url.Values{
-		"reblog_key": []string{reblogKey},
-	}))
+	params := url.Values{}
+	params.Set("reblog_key", reblogKey)
+	_, err := client.PostWithParams(path, setPostId(postId, params))
 	return err
 }
 

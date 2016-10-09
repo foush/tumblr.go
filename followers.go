@@ -64,18 +64,22 @@ func (f *FollowingList)Next() (*FollowingList, error) {
 	if offset >= uint(f.Total) {
 		return nil, NoNextPageError
 	}
-	return GetFollowing(f.client, offset, f.limit)
+	return GetFollowing(f.client, offset, limit)
 }
 
 func (f *FollowingList)Prev() (*FollowingList, error) {
 	if f.offset <= 0 {
 		return nil, NoPrevPageError
 	}
-	var newOffset uint = f.offset - f.limit
-	if f.limit >= f.offset {
+	limit := f.limit
+	if limit < 1 {
+		limit = uint(len(f.Blogs))
+	}
+	var newOffset uint = f.offset - limit
+	if limit >= f.offset {
 		newOffset = 0
 	}
-	return GetFollowing(f.client, newOffset, f.limit)
+	return GetFollowing(f.client, newOffset, limit)
 }
 
 // Retrieve User's followers
@@ -128,7 +132,7 @@ func (f *FollowerList)Prev() (*FollowerList, error){
 	if limit >= f.offset {
 		offset = 0
 	}
-	return GetFollowers(f.client, f.name, offset, f.limit)
+	return GetFollowers(f.client, f.name, offset, limit)
 }
 
 // follow a blog
