@@ -276,6 +276,9 @@ func GetSubmissions(client ClientInterface, name string, params url.Values) (*Po
 
 // Util method for decoding the response
 func doPost(client ClientInterface, path, blogName string, params url.Values) (*PostRef, error) {
+	if blogName == "" {
+		return nil, errors.New("No blog name provided")
+	}
 	response, err := client.PostWithParams(blogPath(path, blogName), params)
 	if err != nil {
 		return nil, err
@@ -323,8 +326,8 @@ func CreatePost(client ClientInterface, name string, params url.Values) (*PostRe
 }
 
 // Edit a given post, returns nil if successful, error on failure
-func EditPost(client ClientInterface, name string, postId uint64, params url.Values) error {
-	_, err := client.PostWithParams(blogPath("/blog/%s/post/edit", name), setPostId(postId, params))
+func EditPost(client ClientInterface, blogName string, postId uint64, params url.Values) error {
+	_, err := client.PostWithParams(blogPath("/blog/%s/post/edit", blogName), setPostId(postId, params))
 	return err
 }
 
@@ -335,15 +338,15 @@ func (p *PostRef) Edit(params url.Values) error {
 
 // Reblog a given post to the given blog, returns the reblog's post id if successful, else the error
 func ReblogPost(client ClientInterface, blogName string, postId uint64, reblogKey string, params url.Values) (*PostRef, error) {
+	if reblogKey == "" {
+		return nil, errors.New("No reblog key provided")
+	}
 	params.Set("reblog_key", reblogKey)
 	return doPost(client, "/blog/%s/post/reblog", blogName, setPostId(postId, params))
 }
 
 // Convenience method to allow calling post.Reblog(params)
 func (p *PostRef) ReblogOnBlog(name string, params url.Values) (*PostRef, error) {
-	if len(p.ReblogKey) < 1 {
-		return nil, errors.New("No reblog key provided")
-	}
 	return ReblogPost(p.client, name, p.Id, p.ReblogKey, params)
 }
 
