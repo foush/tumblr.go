@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"reflect"
 	"net/url"
-	"strconv"
 )
 
 // Representation of a list of Posts
 type Posts struct {
+	client ClientInterface
 	response Response
 	parsedPosts []PostInterface
 	Posts []MiniPost `json:"posts"`
@@ -21,22 +21,17 @@ type Posts struct {
 func (p *Posts) All() ([]PostInterface, error) {
 	var err error = nil
 	if p.parsedPosts == nil {
-		posts := []PostInterface{}
-		for _, mini := range p.Posts {
-			post, _ := makePostFromType(mini.Type)
-			posts = append(posts, post)
-		}
 		r := struct {
 			Response struct {
 					 Posts []PostInterface `json:"posts"`
 				 } `json:"response"`
 		}{}
-		r.Response.Posts = posts
+		r.Response.Posts = makePostsFromMinis(p.Posts, p.client)
 		//fmt.Println(string(p.response.body))
 		if err = json.Unmarshal(p.response.body, &r); err != nil {
 			p.parsedPosts = []PostInterface{}
 		} else {
-			p.parsedPosts = posts
+			p.parsedPosts = r.Response.Posts
 		}
 	}
 	return p.parsedPosts, err
@@ -60,13 +55,20 @@ func (p *Posts) Get(index int) (PostInterface) {
 type MiniPost struct {
 	Id uint64 `json:"id"`
 	Type string `json:"type"`
+	BlogName string `json:"blog_name"`
+	ReblogKey string `json:"reblog_key"`
+}
+
+// Starting point for performing operations on a post
+type PostRef struct {
+	PostInterface
+	MiniPost
+	client ClientInterface
 }
 
 // The common fields on any post, no matter what type
 type Post struct {
-	PostInterface
-	MiniPost
-	BlogName string `json:"blog_name"`
+	PostRef
 	Body string `json:"body"`
 	CanLike bool `json:"can_like"`
 	CanReblog bool `json:"can_reblog"`
@@ -86,7 +88,6 @@ type Post struct {
 		 Comment string `json:"comment"`
 		 TreeHTML string `json:"tree_html"`
 	       } `json:"reblog"`
-	ReblogKey string `json:"reblog_key"`
 	RecommendedColor string `json:"recommended_color"`
 	RecommendedSource bool `json:"recommended_source"`
 	ShortUrl string `json:"short_url"`
@@ -97,6 +98,7 @@ type Post struct {
 	Summary string `json:"summary"`
 	Tags []string `json:"tags"`
 	Timestamp uint64 `json:"timestamp"`
+	FeaturedTimestamp uint64 `json:"featured_timestamp,omitempty"`
 	TrackName string `json:"track_name,omitempty"`
 	Trail []ReblogTrailItem `json:"trail"`
 }
@@ -245,6 +247,7 @@ func queryPosts(client ClientInterface, path, name string, params url.Values) (*
 	}{}
 	if err = json.Unmarshal(response.body, &posts); err == nil {
 		posts.Response.response = response
+		posts.Response.client = client
 		// store
 		return &posts.Response, nil
 	}
@@ -272,10 +275,10 @@ func GetSubmissions(client ClientInterface, name string, params url.Values) (*Po
 }
 
 // Util method for decoding the response
-func doPost(client ClientInterface, path, name string, params url.Values) (uint64, error) {
-	response, err := client.PostWithParams(blogPath(path, name), params)
+func doPost(client ClientInterface, path, blogName string, params url.Values) (*PostRef, error) {
+	response, err := client.PostWithParams(blogPath(path, blogName), params)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	post := struct {
 		Response struct{
@@ -283,34 +286,76 @@ func doPost(client ClientInterface, path, name string, params url.Values) (uint6
 			 } `json:"response"`
 	}{}
 	if err = json.Unmarshal(response.body, &post); err == nil {
-		return post.Response.Id, nil
+		return &PostRef{
+			client: client,
+			MiniPost: MiniPost{
+				Id: post.Response.Id,
+				BlogName: blogName,
+			},
+		}, nil
 	}
-	return 0, err
+	return nil, err
+}
+
+func NewPostRefById(client ClientInterface, id uint64) (*PostRef) {
+	return &PostRef{
+		client: client,
+		MiniPost: MiniPost{
+			Id: id,
+		},
+	}
+}
+
+func NewPostRef(client ClientInterface, post *MiniPost) (*PostRef) {
+	return &PostRef{
+		client: client,
+		MiniPost: *post,
+	}
+}
+
+func (r *PostRef)SetClient(c ClientInterface) {
+	r.client = c
 }
 
 // Create a post, return the ID on success, error on failure
-func CreatePost(client ClientInterface, name string, params url.Values) (uint64, error) {
+func CreatePost(client ClientInterface, name string, params url.Values) (*PostRef, error) {
 	return doPost(client, "/blog/%s/post", name, params)
 }
 
 // Edit a given post, returns nil if successful, error on failure
 func EditPost(client ClientInterface, name string, postId uint64, params url.Values) error {
-	params.Set("id", strconv.FormatUint(postId, 10))
-	_, err := client.PostWithParams(blogPath("/blog/%s/post/edit", name), params)
+	_, err := client.PostWithParams(blogPath("/blog/%s/post/edit", name), setPostId(postId, params))
 	return err
 }
 
+// Convenience method to allow calling post.Edit(params)
+func (p *PostRef) Edit(params url.Values) error {
+	return EditPost(p.client, p.BlogName, p.Id, params)
+}
+
 // Reblog a given post to the given blog, returns the reblog's post id if successful, else the error
-func ReblogPost(client ClientInterface, name string, postId uint64, reblogKey string, params url.Values) (uint64, error) {
-	params.Set("id", strconv.FormatUint(postId, 10))
+func ReblogPost(client ClientInterface, blogName string, postId uint64, reblogKey string, params url.Values) (*PostRef, error) {
 	params.Set("reblog_key", reblogKey)
-	return doPost(client, "/blog/%s/post/reblog", name, params)
+	return doPost(client, "/blog/%s/post/reblog", blogName, setPostId(postId, params))
+}
+
+// Convenience method to allow calling post.Reblog(params)
+func (p *PostRef) ReblogOnBlog(name string, params url.Values) (*PostRef, error) {
+	if len(p.ReblogKey) < 1 {
+		return nil, errors.New("No reblog key provided")
+	}
+	return ReblogPost(p.client, name, p.Id, p.ReblogKey, params)
 }
 
 // Delete a given blog's post by ID, nil if successful, error on failure
 func DeletePost(client ClientInterface, name string, postId uint64) error {
-	_, err := client.PostWithParams(blogPath("/blog/%s/post/delete", name), url.Values{"id": []string{strconv.FormatUint(postId, 10)}})
+	_, err := client.PostWithParams(blogPath("/blog/%s/post/delete", name), setPostId(postId, url.Values{}))
 	return err
+}
+
+// Convenience method to allow calling post.Delete()
+func (p *PostRef) Delete() error {
+	return DeletePost(p.client, p.BlogName, p.Id)
 }
 
 // Helper function
@@ -390,4 +435,22 @@ func makePostFromType(t string) (PostInterface, error) {
 		return &VideoPost{}, nil
 	}
 	return &Post{}, errors.New(fmt.Sprintf("Unknown type %s", t))
+}
+
+func (p *PostRef) Like() error {
+	return LikePost(p.client, p.Id, p.ReblogKey)
+}
+
+func (p *PostRef) Unlike() error {
+	return UnlikePost(p.client, p.Id, p.ReblogKey)
+}
+
+func makePostsFromMinis(minis []MiniPost, client ClientInterface) []PostInterface {
+	posts := []PostInterface{}
+	for _, mini := range minis {
+		post, _ := makePostFromType(mini.Type)
+		post.GetSelf().client = client
+		posts = append(posts, post)
+	}
+	return posts
 }

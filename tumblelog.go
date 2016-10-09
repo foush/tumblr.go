@@ -5,13 +5,43 @@ import (
 	"errors"
 	"encoding/json"
 	"fmt"
+	"net/url"
 )
+
+type BlogInterface interface {
+	GetInfo() (*Blog, error)
+	GetAvatar() (string, error)
+	GetFollowers() (*FollowerList, error)
+	GetPosts(params url.Values) (*Posts, error)
+	GetQueue(params url.Values) (*Posts, error)
+	GetDrafts(params url.Values) (*Posts, error)
+	CreatePost(params url.Values) (*PostRef, error)
+	ReblogPost(p *PostRef, params url.Values) (*PostRef, error)
+	getClient() ClientInterface
+	getName() string
+}
+
+type BlogRef struct {
+	client ClientInterface
+	Name string `json:"name"`
+}
+
+type ShortBlog struct {
+	BlogRef
+	Url string `json:"url"`
+	Title string `json:"title"`
+	IsPrimary bool `json:"primary"`
+	FollowerCount uint32 `json:"followers"`
+	PostToTwitter string `json:"tweet"`
+	PostToFacebook string `json:"facebook"`
+	Visibility string `json:"type"`
+}
 
 // Tumblelog struct
 type Blog struct {
+	BlogRef
 	Url string `json:"url"`
 	Title string `json:"title"`
-	Name string `json:"name"`
 	Posts int64 `json:"posts"`
 	Ask bool `json:"ask"`
 	AskAnon bool `json:"ask_anon"`
@@ -28,7 +58,7 @@ type Blog struct {
 	Subscribed bool `json:"subscribed"`
 	TotalPosts int64 `json:"total_posts"`
 	Updated int64 `json:"updated"`
-	Theme BlogTheme `json:"theme"`
+	//Theme BlogTheme `json:"theme"`
 }
 
 // Tumblelog substructure
@@ -56,27 +86,13 @@ type BlogTheme struct {
 	TitleFontWeight string `json:"title_font_weight"`
 }
 
-// Object from the lsit of followers response
-type FollowerList struct {
-	TotalUsers uint32 `json:"total_users"`
-	Followers []Follower `json:"users"`
-}
-
-// FollowerList substructure
-type Follower struct {
-	Following bool `json:"following"`
-	Name string `json:"name"`
-	Updated int64 `json:"updated"`
-	Url string `json:"url"`
-}
-
 // Convenience method
 func (b *Blog) String() string {
 	return jsonStringify(*b)
 }
 
 // Get information about a blog
-func GetBlog(client ClientInterface, name string) (*Blog, error) {
+func GetBlogInfo(client ClientInterface, name string) (*Blog, error) {
 	response, err := client.Get(blogPath("/blog/%s/info", name))
 	if err != nil {
 		return nil, err
@@ -91,6 +107,7 @@ func GetBlog(client ClientInterface, name string) (*Blog, error) {
 	if err != nil {
 		return nil, err
 	}
+	blog.Response.Blog.client = client
 	return &blog.Response.Blog, nil
 }
 
@@ -114,19 +131,59 @@ func GetAvatar(client ClientInterface, name string) (string, error) {
 	return "", errors.New("Unable to detect avatar location")
 }
 
-// Retrieve User's followers
-func GetFollowers(client ClientInterface, name string) (*FollowerList, error) {
-	response, err := client.Get(blogPath("/blog/%s/followers", name))
-	if err != nil {
-		return nil, err
+func NewBlogRef(client ClientInterface, name string) (*BlogRef) {
+	return &BlogRef{
+		Name: name,
+		client: client,
 	}
-	followers := struct {
-		Followers FollowerList `json:"response"`
-	}{}
-	if err = json.Unmarshal(response.body, &followers); err == nil {
-		return &followers.Followers, nil
-	}
-	return nil, err
+}
+
+func (b *BlogRef) GetInfo() (*Blog, error) {
+	return GetBlogInfo(b.client, b.Name)
+}
+
+func (b *BlogRef) GetAvatar() (string, error) {
+	return GetAvatar(b.client, b.Name)
+}
+
+func (b *BlogRef) GetFollowers() (*FollowerList, error) {
+	return GetFollowers(b.client, b.Name)
+}
+
+func (b *BlogRef) GetPosts(params url.Values) (*Posts, error) {
+	return GetPosts(b.client, b.Name, params)
+}
+
+func (b *BlogRef) GetQueue(params url.Values) (*Posts, error) {
+	return GetQueue(b.client, b.Name, params)
+}
+
+func (b *BlogRef) GetDrafts(params url.Values) (*Posts, error) {
+	return GetDrafts(b.client, b.Name, params)
+}
+
+func (b *BlogRef) CreatePost(params url.Values) (*PostRef, error) {
+	return CreatePost(b.client, b.Name, params)
+}
+
+func (b *BlogRef) ReblogPost(p *PostRef, params url.Values) (*PostRef, error) {
+	return p.ReblogOnBlog(b.Name, params)
+}
+
+func (b *BlogRef) getClient() ClientInterface {
+	return b.client
+}
+
+func (b *BlogRef) getName() string {
+	return b.Name
+}
+
+func (b *BlogRef) Follow() error {
+	return Follow(b.getClient(), b.getName())
+}
+
+func (b *BlogRef) Unfollow() error {
+	return Unfollow(b.getClient(), b.getName())
 }
 
 // Helper function to allow for less verbose code
