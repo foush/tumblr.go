@@ -410,20 +410,80 @@ func TestPostRef_ReblogOnBlog(t *testing.T) {
 
 }
 
-//func TestPosts_All(t *testing.T) {
-//	client := newTestClient("{}", nil)
-//	posts := Posts{client: client, Posts: []MiniPost{MiniPost{Type:"quote"}}}
-//	if posts.parsedPosts != nil {
-//		t.Fatal("Posts initialized with non-nil parsed posts")
-//	}
-//	all, err := posts.All()
-//	if err != nil {
-//		t.Fatal("Failed to parse Posts", err)
-//	}
-//	if posts.parsedPosts == nil {
-//		t.Fatal("Posts does not cache parsed posts after All()")
-//	}
-//	if len(all) != 1 {
-//		t.Fatal("Failed to correctly posts from mini posts array")
-//	}
-//}
+func TestPosts_All(t *testing.T) {
+	client := newTestClient("{}", nil)
+	posts, err := GetPosts(client, "blog", url.Values{})
+	if err != nil {
+		t.Fatal("Failed to get posts")
+	}
+	posts.Posts = []MiniPost{MiniPost{Type:"quote"}}
+	if posts.parsedPosts != nil {
+		t.Fatal("Posts initialized with non-nil parsed posts")
+	}
+	all, err := posts.All()
+	if err != nil {
+		t.Fatal("Failed to parse Posts")
+	}
+	if posts.parsedPosts == nil {
+		t.Fatal("Posts does not cache parsed posts after All()")
+	}
+	if len(all) != 1 {
+		t.Fatal("Failed to correctly posts from mini posts array")
+	}
+}
+
+func TestPosts_AllWithJsonError(t *testing.T) {
+	client := newTestClient("{}", nil)
+	posts, err := GetPosts(client, "blog", url.Values{})
+	if err != nil {
+		t.Fatal("Failed to get posts")
+	}
+	posts.response.body = []byte("{")
+	_, err = posts.All()
+	if err == nil {
+		t.Fatal("Failed to return JSON parse error")
+	}
+}
+
+func TestPosts_Get(t *testing.T) {
+	client := newTestClient("{}", nil)
+	posts, err := GetPosts(client, "blog", url.Values{})
+	if err != nil {
+		t.Fatal("Failed to get posts")
+	}
+	mini := MiniPost{Type:"quote"}
+	posts.Posts = []MiniPost{mini}
+	mockResponse := struct{
+		Response struct{
+				 Posts []QuotePost `json:"posts"`
+			 } `json:"response"`
+	}{}
+	mockResponse.Response.Posts = []QuotePost{QuotePost{Post: Post{PostRef: PostRef{MiniPost: mini}}}}
+	posts.response.body = []byte(jsonStringify(mockResponse))
+	if posts.parsedPosts != nil {
+		t.Fatal("Posts initialized with non-nil parsed posts")
+	}
+	post := posts.Get(0)
+	if posts.parsedPosts == nil {
+		t.Fatal("Get() should cache full array of parsed posts")
+	}
+	fmt.Println(jsonStringify(post))
+	if post.GetSelf().Type != mini.Type {
+		t.Fatalf("Get() should return correct type of mini post; expected %s, got %s", post.GetSelf().Type, mini.Type)
+	}
+	if post := posts.Get(10); post != nil {
+		t.Fatal("Getting out of bounds should generate error")
+	}
+}
+
+func TestPosts_GetWithAllError(t *testing.T) {
+	client := newTestClient("{}", nil)
+	posts, err := GetPosts(client, "blog", url.Values{})
+	if err != nil {
+		t.Fatal("Failed to get posts")
+	}
+	posts.response.body = []byte("{")
+	if post := posts.Get(0); post != nil {
+		t.Fatal("Get() should return nil on error from All()")
+	}
+}

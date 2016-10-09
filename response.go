@@ -10,9 +10,9 @@ import (
 type Response struct {
 	body []byte
 	Headers http.Header
-	Meta map[string]interface{}
-	Result map[string]interface{}
-	Errors map[string]interface{}
+	Meta map[string]interface{} `json:"meta"`
+	Result map[string]interface{} `json:"response"`
+	Errors map[string]interface{} `json:"errors"`
 }
 
 // Create a response object from the body bytestream and the headers structure
@@ -34,19 +34,8 @@ func (r *Response) PopulateFromBody() error {
 	if r.Meta != nil || r.Result != nil || r.Errors != nil {
 		return nil
 	}
-	data := map[string]interface{}{}
-	e := json.Unmarshal(r.body, &data)
-	if e != nil {
+	if e := json.Unmarshal(r.body, r); e != nil {
 		return e
-	}
-	if value,ok := data["meta"]; ok {
-		r.Meta, ok = value.(map[string]interface{})
-	}
-	if value,ok := data["response"]; ok {
-		r.Result, ok = value.(map[string]interface{})
-	}
-	if value,ok := data["errors"]; ok {
-		r.Errors, ok = value.(map[string]interface{})
 	}
 	return nil
 }

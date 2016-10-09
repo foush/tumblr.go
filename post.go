@@ -27,7 +27,6 @@ func (p *Posts) All() ([]PostInterface, error) {
 				 } `json:"response"`
 		}{}
 		r.Response.Posts = makePostsFromMinis(p.Posts, p.client)
-		//fmt.Println(string(p.response.body))
 		if err = json.Unmarshal(p.response.body, &r); err != nil {
 			p.parsedPosts = []PostInterface{}
 		} else {
@@ -38,12 +37,9 @@ func (p *Posts) All() ([]PostInterface, error) {
 }
 
 // Method to retrieve a single Post entity at a given index; returns nil if index is out of bounds
-func (p *Posts) Get(index int) (PostInterface) {
-	if index < 0 {
-		return nil
-	}
+func (p *Posts) Get(index uint) (PostInterface) {
 	if posts,err := p.All(); err == nil {
-		if index >= len(posts) {
+		if index >= uint(len(posts)) {
 			return nil
 		}
 		return posts[index]
