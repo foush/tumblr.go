@@ -61,7 +61,7 @@ func (d *Dashboard)NextBySinceId() (*Dashboard, error) {
 		return nil, NoNextPageError
 	}
 	lastId := d.Posts[size - 1].GetSelf().Id
-	params := setParamsId(lastId, copyParams(d.params), "since_id")
+	params := setParamsUint(lastId, copyParams(d.params), "since_id")
 	return GetDashboard(d.client, params)
 }
 

@@ -147,7 +147,7 @@ func (b *BlogRef) GetAvatar() (string, error) {
 }
 
 func (b *BlogRef) GetFollowers() (*FollowerList, error) {
-	return GetFollowers(b.client, b.Name)
+	return GetFollowers(b.client, b.Name, 0, 0)
 }
 
 func (b *BlogRef) GetPosts(params url.Values) (*Posts, error) {

@@ -24,7 +24,7 @@ func TestPaginateDashboardByOffset(t *testing.T) {
 	p3 := Post{PostRef: PostRef{MiniPost: MiniPost{Id: 12345}}}
 	c := newTestClient(getDashString(Post{}, Post{}, p3), nil)
 	c.confirmExpectedSet = expectClientCallParams(t, "GetDashboard", http.MethodGet, "/user/dashboard", url.Values{})
-	response, err := GetDashboard(&c, url.Values{})
+	response, err := GetDashboard(c, url.Values{})
 	if err != nil {
 		t.Error("Unexpected error getting dashboard", err)
 	}
@@ -65,7 +65,7 @@ func TestPaginateDashboardById(t *testing.T) {
 	p3 := Post{PostRef: PostRef{MiniPost: MiniPost{Id: 12345}}}
 	c := newTestClient(getDashString(Post{}, Post{}, p3), nil)
 	c.confirmExpectedSet = expectClientCallParams(t, "GetDashboard", http.MethodGet, "/user/dashboard", url.Values{})
-	response, err := GetDashboard(&c, url.Values{})
+	response, err := GetDashboard(c, url.Values{})
 	if err != nil {
 		t.Error("Unexpected error getting dashboard", err)
 	}
@@ -79,7 +79,7 @@ func TestPaginateDashboardById(t *testing.T) {
 		t.Error("Expected a dashboard with 3 posts")
 	}
 	c.response.body = []byte(getDashString())
-	c.confirmExpectedSet = expectClientCallParams(t, "GetDashboard", http.MethodGet, "/user/dashboard", setParamsId(p3.Id, url.Values{}, "since_id"))
+	c.confirmExpectedSet = expectClientCallParams(t, "GetDashboard", http.MethodGet, "/user/dashboard", setParamsUint(p3.Id, url.Values{}, "since_id"))
 	nextResponse, err := response.NextBySinceId()
 	if err != nil {
 		t.Error("Unexpected error getting next page of dashboard")

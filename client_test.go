@@ -49,8 +49,8 @@ func TestSetPostId(t *testing.T) {
 }
 
 // convenience function for setting an int
-func TestSetParamsId(t *testing.T) {
-	params := setParamsId(1986, url.Values{}, "key")
+func TestSetParamsUint(t *testing.T) {
+	params := setParamsUint(1986, url.Values{}, "key")
 	if params.Get("key") != "1986" || len(params) != 1 {
 		t.Fatal("Did not correctly set key on params")
 	}
@@ -64,8 +64,8 @@ type testClient struct {
 	confirmExpectedSet func(method, path string, params url.Values)
 }
 
-func newTestClient(response string, err error) testClient {
-	return testClient{
+func newTestClient(response string, err error) *testClient {
+	return &testClient{
 		response: Response{
 			body: []byte(response),
 		},
