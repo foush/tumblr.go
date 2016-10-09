@@ -59,7 +59,6 @@ func (l *Likes)Full() ([]PostInterface, error) {
 				 } `json:"response"`
 		}{}
 		r.Response.Posts = makePostsFromMinis(l.Posts, l.client)
-		//fmt.Println(string(p.response.body))
 		if err = json.Unmarshal(l.response.body, &r); err != nil {
 			l.parsedPosts = []PostInterface{}
 		} else {

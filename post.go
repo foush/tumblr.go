@@ -358,62 +358,6 @@ func (p *PostRef) Delete() error {
 	return DeletePost(p.client, p.BlogName, p.Id)
 }
 
-// Helper function
-func GetText(ptr PostInterface) (*TextPost) {
-	if post,ok := ptr.(*TextPost); ok {
-		return post
-	}
-	return nil
-}
-
-// Helper function
-func GetAudio(ptr PostInterface) (*AudioPost) {
-	if post,ok := ptr.(*AudioPost); ok {
-		return post
-	}
-	return nil
-}
-
-// Helper function
-func GetVideo(ptr PostInterface) (*VideoPost) {
-	if post,ok := ptr.(*VideoPost); ok {
-		return post
-	}
-	return nil
-}
-
-// Helper function
-func GetChat(ptr PostInterface) (*ChatPost) {
-	if post,ok := ptr.(*ChatPost); ok {
-		return post
-	}
-	return nil
-}
-
-// Helper function
-func GetAnswer(ptr PostInterface) (*AnswerPost) {
-	if post,ok := ptr.(*AnswerPost); ok {
-		return post
-	}
-	return nil
-}
-
-// Helper function
-func GetLink(ptr PostInterface) (*LinkPost) {
-	if post,ok := ptr.(*LinkPost); ok {
-		return post
-	}
-	return nil
-}
-
-// Helper function
-func GetQuote(ptr PostInterface) (*QuotePost) {
-	if post,ok := ptr.(*QuotePost); ok {
-		return post
-	}
-	return nil
-}
-
 // Utility function to create the proper instance of Post and return a reference to the generic interface
 func makePostFromType(t string) (PostInterface, error) {
 	switch t {
