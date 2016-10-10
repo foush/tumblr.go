@@ -12,6 +12,7 @@ type User struct {
 	Blogs []ShortBlog `json:"blogs"`
 }
 
+// Retrieves the current user's info (based on the client's token/secret values)
 func GetUserInfo(client ClientInterface) (*User, error) {
 	response, err := client.Get("/user/info")
 	if err != nil {

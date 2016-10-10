@@ -213,7 +213,7 @@ type PhotoSize struct {
 	Url string `json:"url"`
 }
 
-// Convenience method for ease of use
+// Convenience method for ease of use- renders a Post as a JSON string
 func (p *Post) String() string {
 	return jsonStringify(*p)
 }
@@ -269,7 +269,7 @@ func GetSubmissions(client ClientInterface, name string, params url.Values) (*Po
 	return queryPosts(client, "/blog/%s/posts/submission", name, params)
 }
 
-// Util method for decoding the response
+// Util method for decoding the response and converting the resulting ID into a PostRef
 func doPost(client ClientInterface, path, blogName string, params url.Values) (*PostRef, error) {
 	if blogName == "" {
 		return nil, errors.New("No blog name provided")
@@ -284,17 +284,14 @@ func doPost(client ClientInterface, path, blogName string, params url.Values) (*
 			 } `json:"response"`
 	}{}
 	if err = json.Unmarshal(response.body, &post); err == nil {
-		return &PostRef{
-			client: client,
-			MiniPost: MiniPost{
-				Id: post.Response.Id,
-				BlogName: blogName,
-			},
-		}, nil
+		ref := NewPostRefById(client, post.Response.Id)
+		ref.BlogName = blogName
+		return ref, nil
 	}
 	return nil, err
 }
 
+// Creates a PostRef with the given properties set
 func NewPostRefById(client ClientInterface, id uint64) (*PostRef) {
 	return &PostRef{
 		client: client,
@@ -304,6 +301,7 @@ func NewPostRefById(client ClientInterface, id uint64) (*PostRef) {
 	}
 }
 
+// Creates a PostRef with the given properties set
 func NewPostRef(client ClientInterface, post *MiniPost) (*PostRef) {
 	return &PostRef{
 		client: client,
@@ -311,6 +309,7 @@ func NewPostRef(client ClientInterface, post *MiniPost) (*PostRef) {
 	}
 }
 
+// Sets PostRef's client
 func (r *PostRef)SetClient(c ClientInterface) {
 	r.client = c
 }
@@ -379,14 +378,17 @@ func makePostFromType(t string) (PostInterface, error) {
 	return &Post{}, errors.New(fmt.Sprintf("Unknown type %s", t))
 }
 
+// Likes a Post on behalf of the current user
 func (p *PostRef) Like() error {
 	return LikePost(p.client, p.Id, p.ReblogKey)
 }
 
+// Unlikes a Post on behalf of the current user
 func (p *PostRef) Unlike() error {
 	return UnlikePost(p.client, p.Id, p.ReblogKey)
 }
 
+// Create an array of PostInterfaces based on the array of MiniPost objects provided
 func makePostsFromMinis(minis []MiniPost, client ClientInterface) []PostInterface {
 	posts := []PostInterface{}
 	for _, mini := range minis {

@@ -8,24 +8,13 @@ import (
 	"net/url"
 )
 
-type BlogInterface interface {
-	GetInfo() (*Blog, error)
-	GetAvatar() (string, error)
-	GetFollowers() (*FollowerList, error)
-	GetPosts(params url.Values) (*Posts, error)
-	GetQueue(params url.Values) (*Posts, error)
-	GetDrafts(params url.Values) (*Posts, error)
-	CreatePost(params url.Values) (*PostRef, error)
-	ReblogPost(p *PostRef, params url.Values) (*PostRef, error)
-	getClient() ClientInterface
-	getName() string
-}
-
+// Reference to a blog which can be used to perform further blog actions
 type BlogRef struct {
 	client ClientInterface
 	Name string `json:"name"`
 }
 
+// Subset of blog information, returned in the list of blogs belonging to a user (see: GetUserInfo)
 type ShortBlog struct {
 	BlogRef
 	Url string `json:"url"`
@@ -58,40 +47,14 @@ type Blog struct {
 	Subscribed bool `json:"subscribed"`
 	TotalPosts int64 `json:"total_posts"`
 	Updated int64 `json:"updated"`
-	//Theme BlogTheme `json:"theme"`
 }
 
-// Tumblelog substructure
-type BlogTheme struct {
-	AvatarShape string `json:"avatar_shape"`
-	BackgroundColor string `json:"background_color"`
-	BodyFont string `json:"body_font"`
-	// somtimes a single int, sometimes a space-separated series of int's (string)
-	HeaderBounds interface{} `json:"header_bounds"`
-	HeaderFocusHeight uint32 `json:"header_focus_height"`
-	HeaderFocusWidth uint32 `json:"header_focus_width"`
-	HeaderFullHeight uint32 `json:"header_full_height"`
-	HeaderFullWidth uint32 `json:"header_full_width"`
-	HeaderImage string `json:"header_image"`
-	HeaderImageFocused string `json:"header_image_focused"`
-	HeaderImageScaled string `json:"header_image_scaled"`
-	HeaderStretch bool `json:"header_stretch"`
-	LinkColor string `json:"link_color"`
-	ShowAvatar bool `json:"show_avatar"`
-	ShowDescription bool `json:"show_description"`
-	ShowHeaderImage bool `json:"show_header_image"`
-	ShowTitle bool `json:"show_title"`
-	TitleColor string `json:"title_color"`
-	TitleFont string `json:"title_font"`
-	TitleFontWeight string `json:"title_font_weight"`
-}
-
-// Convenience method
+// Convenience method converting a Blog into a JSON representation
 func (b *Blog) String() string {
 	return jsonStringify(*b)
 }
 
-// Get information about a blog
+// Retrieve information about a blog
 func GetBlogInfo(client ClientInterface, name string) (*Blog, error) {
 	response, err := client.Get(blogPath("/blog/%s/info", name))
 	if err != nil {
@@ -111,7 +74,7 @@ func GetBlogInfo(client ClientInterface, name string) (*Blog, error) {
 	return &blog.Response.Blog, nil
 }
 
-// Get Blog's Avatar URI
+// Retrieve Blog's Avatar URI
 func GetAvatar(client ClientInterface, name string) (string, error) {
 	response, err := client.Get(blogPath("/blog/%s/avatar", name))
 	if err != nil {
@@ -131,6 +94,7 @@ func GetAvatar(client ClientInterface, name string) (string, error) {
 	return "", errors.New("Unable to detect avatar location")
 }
 
+// Create a BlogRef
 func NewBlogRef(client ClientInterface, name string) (*BlogRef) {
 	return &BlogRef{
 		Name: name,
@@ -138,52 +102,59 @@ func NewBlogRef(client ClientInterface, name string) (*BlogRef) {
 	}
 }
 
+// Retrieves blog info for the given blog reference
 func (b *BlogRef) GetInfo() (*Blog, error) {
 	return GetBlogInfo(b.client, b.Name)
 }
 
+// Retrieves blog avatar for the given blog reference
 func (b *BlogRef) GetAvatar() (string, error) {
 	return GetAvatar(b.client, b.Name)
 }
 
+// Retrieves blog's followers for the given blog reference
 func (b *BlogRef) GetFollowers() (*FollowerList, error) {
 	return GetFollowers(b.client, b.Name, 0, 0)
 }
 
+// Retrieves blog's posts for the given blog reference
 func (b *BlogRef) GetPosts(params url.Values) (*Posts, error) {
 	return GetPosts(b.client, b.Name, params)
 }
 
+// Retrieves blog's queue for the given blog reference
 func (b *BlogRef) GetQueue(params url.Values) (*Posts, error) {
 	return GetQueue(b.client, b.Name, params)
 }
 
+// Retrieves blog's drafts for the given blog reference
 func (b *BlogRef) GetDrafts(params url.Values) (*Posts, error) {
 	return GetDrafts(b.client, b.Name, params)
 }
 
+// Creates a post on the blog represented by BlogRef
 func (b *BlogRef) CreatePost(params url.Values) (*PostRef, error) {
 	return CreatePost(b.client, b.Name, params)
 }
 
+// Reblogs a post to the blog represented by BlogRef
 func (b *BlogRef) ReblogPost(p *PostRef, params url.Values) (*PostRef, error) {
 	return p.ReblogOnBlog(b.Name, params)
 }
 
-func (b *BlogRef) getClient() ClientInterface {
-	return b.client
-}
-
+// Retrieves name property
 func (b *BlogRef) getName() string {
 	return b.Name
 }
 
+// Follows this blog for the current user (based on OAuth user token/secret)
 func (b *BlogRef) Follow() error {
-	return Follow(b.getClient(), b.getName())
+	return Follow(b.client, b.getName())
 }
 
+// Unfollows this blog for the current user (based on OAuth user token/secret)
 func (b *BlogRef) Unfollow() error {
-	return Unfollow(b.getClient(), b.getName())
+	return Unfollow(b.client, b.getName())
 }
 
 // Helper function to allow for less verbose code

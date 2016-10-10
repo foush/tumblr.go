@@ -31,7 +31,7 @@ type Follower struct {
 	Url string `json:"url"`
 }
 
-// get list of blogs this user follows
+// Retrieves the list of blogs this user follows
 func GetFollowing(client ClientInterface, offset, limit uint) (*FollowingList, error) {
 	params := setParamsUint(uint64(limit), url.Values{}, "limit")
 	params = setParamsUint(uint64(offset), params, "offset")
@@ -54,7 +54,7 @@ func GetFollowing(client ClientInterface, offset, limit uint) (*FollowingList, e
 	return &response.Response, nil
 }
 
-
+// Retrieves the next page of followers
 func (f *FollowingList)Next() (*FollowingList, error) {
 	limit := f.limit
 	if limit < 1 {
@@ -67,6 +67,7 @@ func (f *FollowingList)Next() (*FollowingList, error) {
 	return GetFollowing(f.client, offset, limit)
 }
 
+// Retrieves the previous page of followers
 func (f *FollowingList)Prev() (*FollowingList, error) {
 	if f.offset <= 0 {
 		return nil, NoPrevPageError
@@ -135,7 +136,7 @@ func (f *FollowerList)Prev() (*FollowerList, error){
 	return GetFollowers(f.client, f.name, offset, limit)
 }
 
-// follow a blog
+// Follow a blog
 func Follow(client ClientInterface, blogName string) error {
 	_, err := client.PostWithParams("/user/follow", url.Values{
 		"url": []string{normalizeBlogName(blogName)},
@@ -143,7 +144,7 @@ func Follow(client ClientInterface, blogName string) error {
 	return err
 }
 
-// unfollow a blog
+// Unfollow a blog
 func Unfollow(client ClientInterface, blogName string) error {
 	_, err := client.PostWithParams("/user/unfollow", url.Values{
 		"url": []string{normalizeBlogName(blogName)},

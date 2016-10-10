@@ -15,6 +15,7 @@ type Dashboard struct {
 	Posts []PostInterface `json:"posts"`
 }
 
+// Retreive a User's dashboard
 func GetDashboard(client ClientInterface, params url.Values) (*Dashboard, error) {
 	if params.Get("offset") != "" && params.Get("since_id") != "" {
 		return nil, errors.New("Cannot specify both offset and since_id")
@@ -50,8 +51,10 @@ func GetDashboard(client ClientInterface, params url.Values) (*Dashboard, error)
 	return &full.Response, nil
 }
 
+// Error generated when a Dashboard result set it attempting to change pagination methods
 var MixedPaginationMethodsError error = errors.New("Cannot mix pagination between SinceId and Offset")
 
+// Returns the next page of a user's dashboard using the current page's last Post id
 func (d *Dashboard)NextBySinceId() (*Dashboard, error) {
 	if d.byOffset {
 		return nil, MixedPaginationMethodsError
@@ -65,6 +68,7 @@ func (d *Dashboard)NextBySinceId() (*Dashboard, error) {
 	return GetDashboard(d.client, params)
 }
 
+// Returns the next page of a user's dashboard using the current page's offset
 func (d *Dashboard)NextByOffset() (*Dashboard, error) {
 	if d.bySince {
 		return nil, MixedPaginationMethodsError

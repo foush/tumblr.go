@@ -13,6 +13,7 @@ type Likes struct {
 	TotalLikes uint64 `json:"liked_count"`
 }
 
+// Retrieves a Users's list of Posts they have liked
 // URL values can include:
 // 	limit (int)
 //	offset (int)
@@ -35,6 +36,7 @@ func GetLikes(client ClientInterface, params url.Values) (*Likes, error) {
 	return &result.Response, nil
 }
 
+// Convenience method for performing a like/unlike operation
 func doLike(client ClientInterface, path string, postId uint64, reblogKey string) error {
 	params := url.Values{}
 	params.Set("reblog_key", reblogKey)
@@ -42,14 +44,17 @@ func doLike(client ClientInterface, path string, postId uint64, reblogKey string
 	return err
 }
 
+// Like a post on behalf of a user
 func LikePost(client ClientInterface, postId uint64, reblogKey string) error {
 	return doLike(client, "/user/like", postId, reblogKey)
 }
 
+// Unlike a post on behalf of a user
 func UnlikePost(client ClientInterface, postId uint64, reblogKey string) error {
 	return doLike(client, "/user/unlike", postId, reblogKey)
 }
 
+// Return an array of full post objects (instead of the default array of MiniPosts initially created)
 func (l *Likes)Full() ([]PostInterface, error) {
 	var err error = nil
 	if l.parsedPosts == nil {
