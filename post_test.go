@@ -1,4 +1,4 @@
-package tumblrapi
+package tumblr
 
 import (
 	"testing"
@@ -66,7 +66,7 @@ func TestMakePostFromType(t *testing.T) {
 		"audio": "AudioPost",
 		"video": "VideoPost",
 	}
-	classPrefix := "*tumblrapi."
+	classPrefix := "*tumblr."
 	for postType,postClass := range testCases {
 		post,err := makePostFromType(postType)
 		if err != nil {

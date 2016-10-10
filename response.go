@@ -1,4 +1,4 @@
-package tumblrapi
+package tumblr
 
 import (
 	"encoding/json"
