@@ -27,31 +27,3 @@ func GetUserInfo(client ClientInterface) (*User, error) {
 	}
 	return &result.Response.User, nil
 }
-
-
-//func Follow(client ClientInterface, blogName string) {
-//
-//}
-//
-//func Unfollow(client ClientInterface, blogName string) {
-//
-//}
-
-//
-//func (l *Likes)GetAll() {
-//	if l.parsedPosts == nil {
-//		r := struct {
-//			Response struct {
-//					 Posts []PostInterface `json:"posts"`
-//				 } `json:"response"`
-//		}{}
-//		r.Response.Posts = makePostsFromMinis(l.Posts, l.client)
-//		//fmt.Println(string(p.response.body))
-//		if err := json.Unmarshal(l.response.body, &r); err != nil {
-//			l.parsedPosts = []PostInterface{}
-//		} else {
-//			l.parsedPosts = r.Response.Posts
-//		}
-//	}
-//	return l.parsedPosts
-//}

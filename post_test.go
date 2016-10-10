@@ -467,7 +467,6 @@ func TestPosts_Get(t *testing.T) {
 	if posts.parsedPosts == nil {
 		t.Fatal("Get() should cache full array of parsed posts")
 	}
-	fmt.Println(jsonStringify(post))
 	if post.GetSelf().Type != mini.Type {
 		t.Fatalf("Get() should return correct type of mini post; expected %s, got %s", post.GetSelf().Type, mini.Type)
 	}

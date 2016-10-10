@@ -57,7 +57,6 @@ type MiniPost struct {
 
 // Starting point for performing operations on a post
 type PostRef struct {
-	PostInterface
 	MiniPost
 	client ClientInterface
 }

@@ -8,7 +8,7 @@ import (
 
 var testJsonStringifyCases = []jsonStringifyTestCase{
 	jsonStringifyTestCase{
-		output:"{\n  \"PostInterface\": null,\n  \"id\": 0,\n  \"type\": \"\",\n  \"blog_name\": \"\",\n  \"reblog_key\": \"\",\n  \"body\": \"\",\n  \"can_like\": false,\n  \"can_reblog\": false,\n  \"can_reply\": false,\n  \"can_send_in_message\": false,\n  \"caption\": \"\",\n  \"date\": \"\",\n  \"display_avatar\": false,\n  \"followed\": false,\n  \"format\": \"\",\n  \"highlighted\": null,\n  \"liked\": false,\n  \"note_count\": 0,\n  \"permalink_url\": \"\",\n  \"post_url\": \"\",\n  \"reblog\": {\n    \"comment\": \"\",\n    \"tree_html\": \"\"\n  },\n  \"recommended_color\": \"\",\n  \"recommended_source\": false,\n  \"short_url\": \"\",\n  \"slug\": \"\",\n  \"source_title\": \"\",\n  \"source_url\": \"\",\n  \"state\": \"\",\n  \"summary\": \"\",\n  \"tags\": null,\n  \"timestamp\": 0,\n  \"trail\": null\n}",
+		output:"{\n  \"id\": 0,\n  \"type\": \"\",\n  \"blog_name\": \"\",\n  \"reblog_key\": \"\",\n  \"body\": \"\",\n  \"can_like\": false,\n  \"can_reblog\": false,\n  \"can_reply\": false,\n  \"can_send_in_message\": false,\n  \"caption\": \"\",\n  \"date\": \"\",\n  \"display_avatar\": false,\n  \"followed\": false,\n  \"format\": \"\",\n  \"highlighted\": null,\n  \"liked\": false,\n  \"note_count\": 0,\n  \"permalink_url\": \"\",\n  \"post_url\": \"\",\n  \"reblog\": {\n    \"comment\": \"\",\n    \"tree_html\": \"\"\n  },\n  \"recommended_color\": \"\",\n  \"recommended_source\": false,\n  \"short_url\": \"\",\n  \"slug\": \"\",\n  \"source_title\": \"\",\n  \"source_url\": \"\",\n  \"state\": \"\",\n  \"summary\": \"\",\n  \"tags\": null,\n  \"timestamp\": 0,\n  \"trail\": null\n}",
 		input: Post{},
 	},
 	jsonStringifyTestCase{
