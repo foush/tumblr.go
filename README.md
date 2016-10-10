@@ -6,8 +6,6 @@ This is the Tumblr API Golang client
 
 Run `go get github.com/foush/tumblr.go`
 
-This project utilizes an external OAuth1 library you can find at [github.com/dghubble/oauth1](github.com/dghubble/oauth1) 
-
 ## Usage
 
 [![GoDoc](https://godoc.org/github.com/foush/tumblr.go?status.svg)](https://godoc.org/github.com/foush/tumblr.go)
